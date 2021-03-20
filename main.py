@@ -1,5 +1,6 @@
 import vk_api
 import json
+import datetime
 from vk_api.longpoll import VkLongPoll, VkEventType #для отправки и получения сообщений
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor #нативная клавиатура
 from vk_api.upload import VkUpload
@@ -16,13 +17,14 @@ vk_session = vk_api.VkApi(token=token)
 #необходимо для работы с сообщениями
 longpoll = VkLongPoll(vk_session) 
 
+#чтобы легче обращаться к функциям апи
 vk = vk_session.get_api()
 
+#чтобы легче загружать
 upload = VkUpload(vk)
 
 #видимость клавиатуры
 keyboard = VkKeyboard(one_time=True) 
-
 
 #все возможные сообщения, на которые бот будет отвечать
 messages = ["⚠ГДЕ Я?⚠", "❓ОСТАВИТЬ ОТЗЫВ❓", "✅ПОДПИСАТЬСЯ✅", "start" ,"старт", "Начать"]
@@ -57,7 +59,6 @@ def create_keyboard():
 	keyboard.add_button('✅ПОДПИСАТЬСЯ✅', color=VkKeyboardColor.NEGATIVE)
 	keyboard.get_keyboard()
 
-
 def main():
 	flag = 0 #флаг, который определяет дурачится ли пользователь вводя то, что бот не понимает или пишет отзыв про нас
 	create_keyboard()
@@ -83,12 +84,33 @@ def main():
 				flag = 1
 
 			elif event.text == messages[2]:
-				vk.messages.send(
-					user_id = event.user_id,
-					random_id = event.random_id,
-					message = 'Спасибо!\nТеперь вы подписаны на рассылку!',
-					keyboard = keyboard.get_keyboard(),
-					)
+				with open("subscribers.txt", "r") as SubList:
+					for line in SubList:
+						if str((str(event.user_id) + "\n")) in line:
+							found = True
+				if not found:
+					vk.messages.send(
+						user_id = event.user_id,
+						random_id = event.random_id,
+						message = 'Спасибо!\nТеперь вы подписаны на рассылку!',
+						keyboard = keyboard.get_keyboard(),
+						)
+					with open("subscribers.txt", "a") as SubList:
+						SubList.write(str(event.user_id) + "\n")
+					with open("howmany.txt", "r") as hm:
+						k = int(hm.readline())
+						k +=1
+					with open("howmany.txt", "w") as hm:
+						hm.write(str(k))
+				else:
+					vk.messages.send(
+						user_id = event.user_id,
+						random_id = event.random_id,
+						message = 'Подождите, вы уже подписаны!',
+						keyboard = keyboard.get_keyboard(),
+						)					
+
+
 			elif event.text == messages[3] or event.text == messages[4] or event.text == messages[5]:
 				vk.messages.send(
 					user_id = event.user_id,
@@ -102,7 +124,7 @@ def main():
 					vk.messages.send(
 						user_id = event.user_id,
 						random_id = event.random_id,
-						message = 'Никак не пойму, что вы написали...',
+						message = 'Никак не пойму, что вы написали...' + datetime.datetime.now().strftime('%H:%M on %A'),
 						keyboard = keyboard.get_keyboard()
 						)
 				else:
@@ -115,6 +137,7 @@ def main():
 						message = 'Спасибо за отзыв! Мы обязательно рассмотрим его.',
 						keyboard = keyboard.get_keyboard()
 						)
+			
 
 #беседу пока не трогаю
 #            elif event.from_chat: #если написали в Беседе
@@ -127,3 +150,7 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
+	
+	
+	
