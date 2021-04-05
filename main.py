@@ -27,7 +27,7 @@ upload = VkUpload(vk)
 keyboard = VkKeyboard(one_time=True) 
 
 #все возможные сообщения, на которые бот будет отвечать
-messages = ["⚠ГДЕ Я?⚠", "❓ОСТАВИТЬ ОТЗЫВ❓", "✅ПОДПИСАТЬСЯ✅", "start" ,"старт", "Начать"]
+messages = ["⚠ГДЕ Я?⚠", "❓ОСТАВИТЬ ОТЗЫВ❓", "✅ПОДПИСАТЬСЯ✅", "start" ,"старт", "Начать", "📚ОТОСЛАТЬ РЕШЕНИЕ📚"]
 
 #----------------------------------------------------------------------------------------------------------------------------------#
 
@@ -56,10 +56,12 @@ def create_keyboard():
 	keyboard.add_button('⚠ГДЕ Я?⚠', color=VkKeyboardColor.SECONDARY)
 	keyboard.add_button('❓ОСТАВИТЬ ОТЗЫВ❓', color=VkKeyboardColor.SECONDARY)
 	keyboard.add_line()
-	keyboard.add_button('✅ПОДПИСАТЬСЯ✅', color=VkKeyboardColor.NEGATIVE)
+	keyboard.add_button('✅ПОДПИСАТЬСЯ НА РАССЫЛКУ✅', color=VkKeyboardColor.NEGATIVE)
+	keyboard.add_button('📚ОТОСЛАТЬ РЕШЕНИЕ📚', color=VkKeyboardColor.NEGATIVE)
 	keyboard.get_keyboard()
 
 def main():
+	found = False;
 	flag = 0 #флаг, который определяет дурачится ли пользователь вводя то, что бот не понимает или пишет отзыв про нас
 	create_keyboard()
 	
@@ -87,6 +89,8 @@ def main():
 				with open("subscribers.txt", "r") as SubList:
 					for line in SubList:
 						if str((str(event.user_id) + "\n")) in line:
+							print(str((str(event.user_id) + "\n")))
+							print("\n" + line)
 							found = True
 				if not found:
 					vk.messages.send(
@@ -102,6 +106,7 @@ def main():
 						k +=1
 					with open("howmany.txt", "w") as hm:
 						hm.write(str(k))
+					found = False
 				else:
 					vk.messages.send(
 						user_id = event.user_id,
@@ -118,6 +123,14 @@ def main():
 					message = 'Итак, что тебе интересно?',
 					keyboard = keyboard.get_keyboard()
 					)
+			elif event.text == messages[6]:
+				flag = 2
+				vk.messages.send(
+					user_id = event.user_id,
+					random_id = event.random_id,
+					message = 'Пожалуйста, напишите ваше решение следующим сообщением.',
+					keyboard = keyboard.get_keyboard()
+					)				
 			else:
 				if flag == 0:
 					#если пользователь дурачится
@@ -127,7 +140,7 @@ def main():
 						message = 'Никак не пойму, что вы написали...' + datetime.datetime.now().strftime('%H:%M on %A'),
 						keyboard = keyboard.get_keyboard()
 						)
-				else:
+				if flag == 1:
 					with open("messages.txt" ,"a") as FeedBack:
 						FeedBack.write("\n" + event.text)
 					flag = 0
@@ -137,6 +150,37 @@ def main():
 						message = 'Спасибо за отзыв! Мы обязательно рассмотрим его.',
 						keyboard = keyboard.get_keyboard()
 						)
+				if flag == 2:
+					flag = 0
+					user_get=vk.users.get(user_ids = event.user_id)
+					user_get=user_get[0]
+					first_name=user_get['first_name']
+					last_name=user_get['last_name']
+					full_name=first_name+" "+last_name
+					full_message = full_name + " " + event.text
+					vk.messages.send(
+						user_id = event.user_id,
+						random_id = event.random_id,
+						message = 'Ваше решение принято, спасибо!',
+						keyboard = keyboard.get_keyboard()
+						)
+					vk.messages.send(
+						user_id = 612186252,
+						random_id = event.random_id,
+						message = full_message,
+						keyboard = keyboard.get_keyboard()
+						)
+#					attachments1 = event.attachments.get('attach1_type', False)+event.attachments.get('attach1', False)
+	#				vk.messages.send(
+	#					user_id= 612186252,
+	#					random_id = event.random_id,
+	#					message = "",
+	#					attachment = attachments1, 
+	#					keyboard = keyboard.get_keyboard()
+	#					)
+
+
+
 			
 
 #беседу пока не трогаю
@@ -150,7 +194,3 @@ def main():
 
 if __name__ == '__main__':
 	main()
-
-	
-	
-	
